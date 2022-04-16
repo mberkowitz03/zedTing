@@ -49,8 +49,15 @@ int main(int argc, char **argv) {
         exit(-1);
     }
     // Get camera information (ZED serial number)
+<<<<<<< HEAD
     //int zed_serial = zed.getCameraInformation().serial_number;
     //printf("Hello! This is my serial number: %d\n", zed_serial);
+=======
+    sl::Mat pcdMat;
+    GPU_Cloud gpuCloud;
+    zed.retrieveMeasure(pcdMat, sl::MEASURE::XYZRGBA, sl::MEM::GPU);
+    getRawCloud(gpuCloud, pcdMat);
+>>>>>>> 6020464cadbb7463944b541c9c9ee9ed30c48e5e
 
     // Get camera resolution
     int width = 69;
