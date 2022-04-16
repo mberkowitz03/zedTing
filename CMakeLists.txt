@@ -8,16 +8,16 @@ FILE(GLOB_RECURSE SRC_FILES "${SRC_FOLDER}/*.cpp")
 ADD_EXECUTABLE(${execName} ${SRC_FILES})
 
 find_package(ZED 3 REQUIRED)
+find_package(PCL 1.3 REQUIRED)
 
-#SET(CMAKE_CUDA_COMPILER_ENV_VAR /usr/local/cuda/bin/nvcc)
-#SET(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-
-include_directories(SYSTEM ${ZED_INCLUDE_DIRS})
+include_directories(${ZED_INCLUDE_DIRS})
 include_directories(${CUDA_INCLUDE_DIRS})
+include_directories(${PCL_INCLUDE_DIRS})
 
 TARGET_LINK_LIBRARIES(${execName}
                         ${ZED_LIBRARIES}
 	                    ${SPECIAL_OS_LIBS}
+						${PCL_LIBRARIES}
                         ${CUDA_LIBRARIES} ${CUDA_npps_LIBRARY} ${CUDA_nppi_LIBRARY} )
 
 #if(COMMAND cmake_policy)
