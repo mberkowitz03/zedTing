@@ -29,7 +29,9 @@ int main(int argc, char **argv) {
     }
     // Get camera information (ZED serial number)
     sl::Mat pcdMat;
+    GPU_Cloud gpuCloud;
     zed.retrieveMeasure(pcdMat, sl::MEASURE::XYZRGBA, sl::MEM::GPU);
+    getRawCloud(gpuCloud, pcdMat);
 
 
 
