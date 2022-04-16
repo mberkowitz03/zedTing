@@ -1,3 +1,0 @@
-/home/max/Documents/zedTing/build/CMakeFiles/rebuild_cache.dir
-/home/max/Documents/zedTing/build/CMakeFiles/edit_cache.dir
-/home/max/Documents/zedTing/build/CMakeFiles/Recorder.dir
