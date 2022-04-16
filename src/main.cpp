@@ -12,12 +12,12 @@ int main(int argc, char **argv) {
 
     // Open the camera
     ERROR_CODE err = zed.open(init_params);
-    if (err != SUCCESS)
+    if (err != ERROR_CODE::SUCCESS)
         exit(-1);
 
     // Get camera information (ZED serial number)
     int zed_serial = zed.getCameraInformation().serial_number;
-	
+
     printf("Hello! This is my serial number: %d\n", zed_serial);
 
     // Close the camera
