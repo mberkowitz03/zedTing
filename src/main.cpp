@@ -5,34 +5,25 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/common/common.h>
-#include "json.hpp"
-
+#include “json.hpp”
 void get_pcl_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pcl_cloud, sl::Mat &zed_pc)
 {
-    zed.retrieveMeasure(zed_pc, sl::MEASURE::XYZRGBA, sl::MEM::GPU);
-
+    zed.retrieveMeasure(zed_pc, sl::measure::XYZRGBA, sl::MEM::GPU);
     float *p_zed_pc = zed_pc.getPtr<float>();
     int index = 0;
-
     // Check and adjust points for PCL format
     for (auto &it : p_pcl_cloud->points) {
         float X = p_zed_pc[index];
-
         it.x = X;
         it.y = p_zed_pc[index + 1];
         it.z = p_zed_pc[index + 2];
         it.rgb = convertColor(p_zed_pc[index + 3]); // Convert a 32bits float into a pcl .rgb format
-
         index += 4;
     }
 }
-
-
 int main(int argc, char **argv) {
-
     // Create a ZED camera object
     sl::Camera zed;
-
     // Set configuration parameters (@TODO: confirm)
     sl::InitParameters init_params;
     init_params.sdk_verbose = true; // Disable verbose mode
@@ -40,36 +31,27 @@ int main(int argc, char **argv) {
     init_params.camera_fps = 30;
     init_params.coordinate_units = UNIT::MILLIMETER;
     init_params.depth_mode = DEPTH_MODE::ULTRA;
-
     // Open the camera
     sl::ERROR_CODE err = zed.open(init_params);
     if (err != sl::ERROR_CODE::SUCCESS) {
         exit(-1);
     }
-    
-    //Zed point cloud 
+    //Zed point cloud
     sl::Mat &zed_pc
-
     //PCL point cloud
     sl::Resolution cloud_res(640, 360);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr
                 p_pcl_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     p_pcl_point_cloud->points.resize(cloud_res.area());
-
     // Gets ZED point cloud and converts to PCL point cloud
-    get_pcl_cloud(p_pcl_cloud, zed_pc); 
-
-    //Data stream 
+    get_pcl_cloud(p_pcl_cloud, zed_pc);
+    //Data stream
     std::ostringstream oss;
-
     //PCL encoder / decoder
     pcl::io::OctreePointCloudCompression<pcl::PointXYZRGBA>* PointCloudEncoder;
     //pcl::io::OctreePointCloudCompression<pcl::PointXYZRGBA>* PointCloudDecoder;
-
     PointCloudEncoder->encodePointCloud (p_pcl_cloud, oss);
-    
     // Close the camera
     zed.close();
     return 0;
 }
-
