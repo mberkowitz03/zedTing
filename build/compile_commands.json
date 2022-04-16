@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/max/Documents/zedTing/build",
+  "command": "/usr/bin/g++  -D_DEBUG -I/usr/local/zed/include -I/usr/local/cuda/include  -g   -o CMakeFiles/Recorder.dir/src/main.cpp.o -c /home/max/Documents/zedTing/src/main.cpp",
+  "file": "/home/max/Documents/zedTing/src/main.cpp"
+}
+]
