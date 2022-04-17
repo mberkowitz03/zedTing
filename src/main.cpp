@@ -1,11 +1,14 @@
 #include <sl/Camera.hpp>
 #include <glm/vec4.hpp>
-#include <iostream>
-#include <fstream>
 #include <pcl/io/pcd_io.h>
 #include <pcl/compression/octree_pointcloud_compression.h>
 #include <pcl/point_types.h>
 #include <pcl/common/common.h>
+#include <vector>
+#include <ctime>
+#include <sstream>
+#include <iostream>
+#include <fstream>
 #include "json.hpp"
 
 inline float convertColor(float colorIn) {
@@ -32,7 +35,13 @@ void get_pcl_cloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &p_pcl_cloud, sl::Came
     }
 }
 
-
+std::string getTimestampStr() {
+    time_t time = std::time(nullptr);
+    tm tm = *std::localtime(&time);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    return oss.str();
+}
 
 int main(int argc, char **argv) {
     // Create a ZED camera object
@@ -55,6 +64,37 @@ int main(int argc, char **argv) {
     //Data stream
     pcl::PCDWriter writer;
     writer.writeBinaryCompressed("temp.pcd", *p_pcl_cloud);
+
+    sl::SensorsData sensorData;
+    zed.getSensorsData(sensorData, sl::TIME_REFERENCE::CURRENT);
+
+    ifstream fin("temp.pcd", std::ios::binary);
+    std::stringstream buffer;
+    buffer << fin.rdbuf();
+    
+    nlohmann::json jsonData = {
+                            {"timestamp", getTimestampStr()},    
+                            {"magnetometer", {
+                                {"state", sensorData.magnetometer.magnetic_heading_state},
+                                {"heading", sensorData.magnetometer.magnetic_heading}
+                               }}, 
+                               {"angular velocity", {
+                                   {"x", sensorData.imu.angular_velocity.x},
+                                   {"y", sensorData.imu.angular_velocity.y},
+                                   {"z", sensorData.imu.angular_velocity.z}
+                               }},
+                               {"linear acceleration", {
+                                   {"x", sensorData.imu.linear_acceleration.x},
+                                   {"y", sensorData.imu.linear_acceleration.y},
+                                   {"z", sensorData.imu.linear_acceleration.z}
+                               }},
+                               {"barometer", sensorData.barometer.pressure},
+                               {"temperature", sensorData.temperature.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_LEFT]},
+                               {"point cloud binary", buffer.str()}};
+
+    
+
+
     // Close the camera
     zed.close();
     return 0;
