@@ -9,7 +9,11 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <signal.h>
+#include <experimental/filesystem>
 #include "json.hpp"
+
+namespace fs = std::experimental::filesystem;
 
 inline float convertColor(float colorIn) {
     uint32_t color_uint = *(uint32_t *) & colorIn;
@@ -43,6 +47,11 @@ std::string getTimestampStr() {
     return oss.str();
 }
 
+void handler(int s) {
+    //close files and shtuff
+    exit(s);
+}
+
 int main(int argc, char **argv) {
     // Create a ZED camera object
     sl::Camera zed;
@@ -60,15 +69,22 @@ int main(int argc, char **argv) {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr
                 p_pcl_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     // Gets ZED point cloud and converts to PCL point cloud
+
+    //TRYING TO DO SIGINT stuff
+    signal(SIGINT, handler);
+    //
+
+    //start loop
     get_pcl_cloud(p_pcl_cloud, zed);
     //Data stream
     pcl::PCDWriter writer;
-    writer.writeBinaryCompressed("temp.pcd", *p_pcl_cloud);
+    fs::path tempDir = fs::temp_directory_path();
+    writer.writeBinaryCompressed(tempDir.string() + "temp.pcd", *p_pcl_cloud);
 
     sl::SensorsData sensorData;
     zed.getSensorsData(sensorData, sl::TIME_REFERENCE::CURRENT);
 
-    ifstream fin("temp.pcd", std::ios::binary);
+    ifstream fin(tempDir.string() + "temp.pcd", std::ios::binary);
     std::stringstream buffer;
     buffer << fin.rdbuf();
     
@@ -92,7 +108,12 @@ int main(int argc, char **argv) {
                                {"temperature", sensorData.temperature.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_LEFT]},
                                {"point cloud binary", buffer.str()}};
 
-    
+    //add json to a file dir
+
+
+    //loop
+
+    //end loop
 
 
     // Close the camera
