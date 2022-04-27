@@ -14,6 +14,7 @@
 #include "json.hpp"
 
 namespace fs = std::experimental::filesystem;
+volatile sig_atomic_t stop = 0;
 
 inline float convertColor(float colorIn) {
     uint32_t color_uint = *(uint32_t *) & colorIn;
@@ -43,17 +44,20 @@ std::string getTimestampStr() {
     time_t time = std::time(nullptr);
     tm tm = *std::localtime(&time);
     std::ostringstream oss;
-    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    oss << std::put_time(&tm, "%d-%m-%Y %H:%M:%S");
     return oss.str();
 }
 
 void handler(int s) {
     //close files and shtuff
-    exit(s);
+    stop = 1;
 }
 
 int main(int argc, char **argv) {
-    // Create a ZED camera object
+    std::string dirName = "../Recordings";
+    if(!fs::is_directory(dirName)) {
+        fs::create_directory(dirName);
+    }
     sl::Camera zed;
     // Set configuration parameters (@TODO: confirm)
     sl::InitParameters init_params;
@@ -64,57 +68,57 @@ int main(int argc, char **argv) {
     if (err != sl::ERROR_CODE::SUCCESS) {
         exit(-1);
     }
+
     //Zed point cloud
     //PCL point cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr
                 p_pcl_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-    // Gets ZED point cloud and converts to PCL point cloud
+    pcl::PCDWriter writer;
 
     //TRYING TO DO SIGINT stuff
     signal(SIGINT, handler);
     //
 
     //start loop
-    get_pcl_cloud(p_pcl_cloud, zed);
-    //Data stream
-    pcl::PCDWriter writer;
-    fs::path tempDir = fs::temp_directory_path();
-    writer.writeBinaryCompressed(tempDir.string() + "temp.pcd", *p_pcl_cloud);
+    while (!stop) {
+        get_pcl_cloud(p_pcl_cloud, zed);
+        //Data stream
+        std::string tmpName = "/tmp/zed_tmp.pcd";
+        ifstream tmpFile(tmpName);
+        writer.writeBinaryCompressed(tmpName, *p_pcl_cloud);
 
-    sl::SensorsData sensorData;
-    zed.getSensorsData(sensorData, sl::TIME_REFERENCE::CURRENT);
+        sl::SensorsData sensorData;
+        zed.getSensorsData(sensorData, sl::TIME_REFERENCE::CURRENT);
 
-    ifstream fin(tempDir.string() + "temp.pcd", std::ios::binary);
-    std::stringstream buffer;
-    buffer << fin.rdbuf();
-    
-    nlohmann::json jsonData = {
-                            {"timestamp", getTimestampStr()},    
-                            {"magnetometer", {
-                                {"state", sensorData.magnetometer.magnetic_heading_state},
-                                {"heading", sensorData.magnetometer.magnetic_heading}
-                               }}, 
-                               {"angular velocity", {
-                                   {"x", sensorData.imu.angular_velocity.x},
-                                   {"y", sensorData.imu.angular_velocity.y},
-                                   {"z", sensorData.imu.angular_velocity.z}
-                               }},
-                               {"linear acceleration", {
-                                   {"x", sensorData.imu.linear_acceleration.x},
-                                   {"y", sensorData.imu.linear_acceleration.y},
-                                   {"z", sensorData.imu.linear_acceleration.z}
-                               }},
-                               {"barometer", sensorData.barometer.pressure},
-                               {"temperature", sensorData.temperature.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_LEFT]},
-                               {"point cloud binary", buffer.str()}};
+        std::stringstream buffer;
+        buffer << tmpFile.rdbuf();
 
-    //add json to a file dir
+        std::string timeStamp = getTimestampStr();
+        
+        nlohmann::json jsonData = {
+                                {"timestamp", timeStamp},    
+                                {"magnetometer", {
+                                    {"state", sensorData.magnetometer.magnetic_heading_state},
+                                    {"heading", sensorData.magnetometer.magnetic_heading}
+                                }}, 
+                                {"angular velocity", {
+                                    {"x", sensorData.imu.angular_velocity.x},
+                                    {"y", sensorData.imu.angular_velocity.y},
+                                    {"z", sensorData.imu.angular_velocity.z}
+                                }},
+                                {"linear acceleration", {
+                                    {"x", sensorData.imu.linear_acceleration.x},
+                                    {"y", sensorData.imu.linear_acceleration.y},
+                                    {"z", sensorData.imu.linear_acceleration.z}
+                                }},
+                                {"barometer", sensorData.barometer.pressure},
+                                {"temperature", sensorData.temperature.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_LEFT]},
+                                {"point cloud binary", buffer.str()}};
 
-
-    //loop
-
-    //end loop
-
+        std::string fileName = dirName + "/" + timeStamp + ".json";
+        std::ofstream file(fileName);
+        file << jsonData;
+    }
 
     // Close the camera
     zed.close();
