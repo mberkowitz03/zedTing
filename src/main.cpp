@@ -113,28 +113,6 @@ int main(int argc, char** argv) {
                   << "BAROMETER_PRESSURE " << sensorData.barometer.pressure << '\n'
                   << "TEMP " << sensorData.temperature.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_LEFT] << '\n';
         pcdStream << pcdFile.rdbuf();
-
-        // TODO: insert into PCD directly, don't bother with json
-
-        // nlohmann::json jsonData = {
-        //                         {"timestamp", timeStamp},
-        //                         {"magnetometer", {
-        //                             {"state", sensorData.magnetometer.magnetic_heading_state},
-        //                             {"heading", sensorData.magnetometer.magnetic_heading}
-        //                         }},
-        //                         {"angular velocity", {
-        //                             {"x", sensorData.imu.angular_velocity.x},
-        //                             {"y", sensorData.imu.angular_velocity.y},
-        //                             {"z", sensorData.imu.angular_velocity.z}
-        //                         }},
-        //                         {"linear acceleration", {
-        //                             {"x", sensorData.imu.linear_acceleration.x},
-        //                             {"y", sensorData.imu.linear_acceleration.y},
-        //                             {"z", sensorData.imu.linear_acceleration.z}
-        //                         }},
-        //                         {"barometer", sensorData.barometer.pressure},
-        //                         {"temperature", sensorData.temperature.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_LEFT]},
-        //                         {"point cloud binary", buffer.str()}};
     }
 
     // Close the camera
